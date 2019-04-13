@@ -12,7 +12,15 @@
       >
       </div>
     </div>
-    <div class="ranking-area">Ranking chart goes here</div>
+    <div class="ranking-area">
+      <div class="ranking-area-date">{{ rankingElements[activeStep].timestamp }}</div>
+      <div
+        v-for="(place, index) in rankingElements[activeStep].places"
+        :key="index"
+      >
+        {{place.name}} - {{place.position}}
+      </div>
+    </div>
   </div>
 </template>
 
@@ -23,18 +31,20 @@ export default {
     return {
       activeStep: 0,
       rankingElements: [
-        'a',
-        'b',
-        'a',
-        'a',
-        'a',
-        'a',
-        'a',
-        'b',
-        'b',
-        'b',
-        'b',
-        'b',
+        {
+          timestamp: new Date('2019-01-01T12:15:00Z'),
+          places: [
+            { position: 1, name: 'Madrid' },
+            { position: 2, name: 'Barcelona' },
+          ],
+        },
+        {
+          timestamp: new Date('2019-01-01T12:30:00Z'),
+          places: [
+            { position: 1, name: 'Madrid' },
+            { position: 1, name: 'Sevilla' },
+          ],
+        },
       ],
     };
   },
@@ -68,6 +78,7 @@ export default {
   overflow: scroll;
   scrollbar-width: none;
   -ms-overflow-style: none;
+  background: #aaaaaa;
 }
 
 .progress-area::-webkit-scrollbar {
