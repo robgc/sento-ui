@@ -18,16 +18,19 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 <template>
   <div id="app">
     <Map></Map>
+    <Timeline></Timeline>
   </div>
 </template>
 
 <script>
 import Map from './components/Map.vue';
+import Timeline from './components/Timeline.vue';
 
 export default {
   name: 'app',
   components: {
     Map,
+    Timeline,
   },
 };
 </script>
@@ -37,6 +40,7 @@ html,
 body {
   margin: 0;
   height: 100%;
+  font-family: 'Open Sans', sans-serif;
 }
 
 #app {
