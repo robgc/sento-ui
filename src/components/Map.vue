@@ -16,10 +16,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 -->
 
 <template>
-  <MglMap
-    :mapStyle="mapStyle"
-    :attributionControl="false"
-  >
+  <MglMap :mapStyle="mapStyle" :attributionControl="false" @load="onMapLoaded" ref="baseMap">
     <MglAttributionControl position="bottom-right" />
 
     <MglGeojsonLayer
@@ -27,9 +24,9 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
       :source="geoJsonSource"
       layerId="locationsLayer"
       :layer="geoJsonLayer"
-      @click="layerClickedEvent"
-      @mouseenter="layerMouseEnterEvent"
-      @mouseleave="layerMouseLeaveEvent"
+      @click="onLayerClicked"
+      @mouseenter="onMouseEnter"
+      @mouseleave="onMouseLeave"
     />
     <MglPopup
       :coordinates="coordinates"
@@ -64,13 +61,13 @@ export default {
   data() {
     return {
       mapStyle: 'https://omt.robser.duckdns.org/styles/positron/style.json',
-      geoJsonSource: { data: 'http://192.168.1.105:8000/locations.json' },
+      geoJsonSource: { data: 'http://localhost:8000/locations.json' },
       geoJsonLayer: {
         id: 'locationsLayer',
         source: 'sentoLocationsSource',
         type: 'fill',
         paint: {
-          'fill-color': '#00ffff',
+          'fill-color': '#61a1f3',
         },
       },
       coordinates: undefined,
@@ -83,16 +80,28 @@ export default {
   },
 
   methods: {
-    layerClickedEvent(event) {
+    async onMapLoaded(event) {
+      const asyncActions = event.component.actions;
+      await asyncActions.flyTo({
+        center: [-5.70, 36.12],
+        zoom: 5,
+        speed: 1,
+      });
+    },
+    async onLayerClicked(event) {
       const { lngLat, features } = event.mapboxEvent;
+      const asyncActions = this.$refs.baseMap.actions;
       this.coordinates = [lngLat.lng, lngLat.lat];
       this.layerFeature = features[0].properties;
+      await asyncActions.flyTo({ center: this.coordinates });
       this.$refs.clickPopup.$_addPopup();
     },
-    layerMouseEnterEvent(event) {
+    onMouseEnter(event) {
+      // eslint-disable-next-line no-param-reassign
       event.map.getCanvas().style.cursor = 'pointer';
     },
-    layerMouseLeaveEvent(event) {
+    onMouseLeave(event) {
+      // eslint-disable-next-line no-param-reassign
       event.map.getCanvas().style.cursor = '';
     },
   },
