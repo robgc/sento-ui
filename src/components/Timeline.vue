@@ -1,24 +1,36 @@
 <template>
   <div class="timeline">
     <div class="info">Trend name goes here</div>
+    <div class="player-area">
+      <div class="player-button"/>
+      <div
+        class="player-date"
+        ref="playerDate">
+          {{ rankingElements[activeStep].timestamp.toLocaleString() }}
+      </div>
+    </div>
     <div class="progress-area">
       <div
         v-for="(rankElement, index) in rankingElements"
         @click="activeStep = index"
+        @mouseover="previewDate(index)"
+        @mouseleave="removePreviewDate()"
         :key="index"
         :class="{'progress-step': true, 'is-active': activeStep == index,
                  'is-complete': index < activeStep}"
         :id="'step-' + index"
-      >
+      />
       </div>
     </div>
     <div class="ranking-area">
       <div class="ranking-area-date">{{ rankingElements[activeStep].timestamp }}</div>
       <div
+        class="ranking-row"
         v-for="(place, index) in rankingElements[activeStep].places"
         :key="index"
       >
-        {{place.name}} - {{place.position}}
+        <div class="ranking-place">{{place.name}}</div>
+        <div class="ranking-pos">{{place.position}}</div>
       </div>
     </div>
   </div>
@@ -48,6 +60,20 @@ export default {
       ],
     };
   },
+  methods: {
+    previewDate(index) {
+      if (index !== this.activeStep) {
+        const elm = this.$refs.playerDate;
+        elm.style.cursor = 'pointer';
+        elm.innerHTML = 'Ir a '.concat(this.rankingElements[index].timestamp.toLocaleString());
+      }
+    },
+    removePreviewDate() {
+      const elm = this.$refs.playerDate;
+      elm.style.cursor = '';
+      elm.innerHTML = this.rankingElements[this.activeStep].timestamp.toLocaleString();
+    },
+  },
 };
 </script>
 
@@ -58,27 +84,34 @@ export default {
   top: 15%;
   z-index: 1;
   width: 20%;
-  height: 80%;
-  overflow: hidden;
   max-height: 80%;
+  overflow: hidden;
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  align-items: stretch;
+  background: #dee8e8;
+  box-shadow: 0 10px 20px rgba(0,0,0,0.19), 0 6px 6px rgba(0,0,0,0.23);
+  font-size: 1.5em;
+  text-align: center;
 }
 
 .info {
-  height: 5%;
-  border: 0.5em;
-  background-color: #61a1f3;
+  flex-basis: 100%;
+  border-bottom: 1px solid #c2c8ca;
+}
+
+.player-area {
+  flex-basis: 100%;
+  border-bottom: 1px solid #c2c8ca;
 }
 
 .progress-area {
-  position: inherit;
-  width: 20%;
-  height: 100%;
-  border: 1em;
-  /* background-color: #2a82f2; */
+  flex-basis: 20%;
+  max-height: 25em;
   overflow: scroll;
   scrollbar-width: none;
   -ms-overflow-style: none;
-  background: #aaaaaa;
 }
 
 .progress-area::-webkit-scrollbar {
@@ -108,69 +141,90 @@ export default {
 }
 
 .progress-step {
-  position: relative;
-  width: 100%;
-  height: 10%;
+  width: 1.2em;
+  height: 1.2em;
+  display: block;
+  margin: 20% auto;
+  background: #fff;
+  border: 4px solid #aec3d7;
+  border-radius: 100%;
+  color: #fff;
 }
 
 .progress-step:last-child::after {
   display: none;
 }
 
-.progress-step::before {
-  content: "";
-  width: 1.2em;
-  height: 1.2em;
-  display: block;
-  margin: 10% auto;
-  background: #fff;
-  border: 4px solid #dfe3e4;
-  border-radius: 100%;
-  color: #fff;
-  cursor: pointer;
-}
-
 .progress-step::after {
   content: "";
   display: block;
-  height: 100%;
-  margin: -15% auto;
+  height: 200%;
+  margin: 100% auto;
   transition: height 1s ease-in;
   width: 0.5em;
-  background: #dfe3e4;
+  background: #aec3d7;
   z-index: 0;
 }
 
 .progress-step.is-active {
-  color: #2183dd;
-}
-
-.progress-step.is-active::before {
-  border: 4px solid #dfe3e4;
-  background: #2183dd;
+  border: 4px solid #aec3d7;
+  background: #afe9f5;
   animation: pulse 2s infinite;
 }
 
 .progress-step.is-complete {
-  color: #2183dd;
-}
-
-.progress-step.is-complete::before {
   color: #fff;
-  background: #2183dd;
+  background: #7b9dd5;
   border: 4px solid transparent;
 }
 
 .progress-step.is-complete::after {
-  background: #2183dd;
+  background: #7b9dd5;
   /* animation: nextStep 1s;
   animation-fill-mode: forwards; */
 }
 
 .ranking-area {
-  width: 80%;
-  border: 1em;
-  background-color: #9dc4f6;
-  float: right;
+  flex-basis: 80%;
+  max-height: 25em;
+  overflow: scroll;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.ranking-area::-webkit-scrollbar {
+  width: 0;
+  height: 0;
+}
+
+.ranking-row {
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+  margin: 2%;
+  padding: 2%;
+  background: #e9ebec;
+  border-radius: 2px;
+  box-shadow: 0px 3px 8px rgba(0,0,0,0.19);
+}
+
+.ranking-row:first-child {
+  margin-top: 5%;
+}
+
+.ranking-row:last-child {
+  margin-bottom: 10%;
+}
+
+.ranking-place {
+  display: inline-block;
+}
+
+.ranking-pos {
+  display: inline-block;
+}
+
+.ranking-place {
+  font-weight: bold
 }
 </style>
