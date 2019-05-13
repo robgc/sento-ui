@@ -19,18 +19,29 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
   <md-app-toolbar class="md-primary">
     <div class="md-toolbar-row">
       <div class="md-toolbar-section-start">
-        <md-button class="md-icon-button" @click="$emit('on-menu-click', !menuVisible)">
+        <md-button
+          class="md-icon-button"
+          @click="$emit('on-menu-click', !menuVisible)"
+        >
           <md-icon>menu</md-icon>
         </md-button>
         <h3 class="md-title">Sento</h3>
       </div>
       <md-autocomplete
         class="search"
-        v-model="selectedTrend"
-        :md-options="latestTrends"
+        v-model="searchQuery"
+        :md-options="trends"
+        @md-opened="getTopTrends"
+        @md-selected="onTrendSelected"
         md-layout="box"
       >
         <label>Buscar una tendencia...</label>
+        <template
+          slot="md-autocomplete-item"
+          slot-scope="{ item }"
+        >
+          {{ item.trend ? item.trend : item }}
+        </template>
       </md-autocomplete>
 
       <div class="md-toolbar-section-end">
@@ -40,21 +51,63 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 </template>
 
 <script>
+import axios from 'axios';
+import * as _ from 'lodash';
+
 export default {
   name: 'TheToolbar',
   data() {
     return {
+      searchQuery: null,
       selectedTrend: null,
-      latestTrends: [
-        '#Trend1',
-        '#Trend2',
-        '#Trend3',
-      ],
-
+      trends: [],
     };
   },
   props: {
     menuVisible: Boolean,
+  },
+  watch: {
+    searchQuery(newQuery, oldQuery) {
+      if (oldQuery !== null && newQuery !== null && oldQuery.length > 0 && newQuery.length === 0) {
+        this.getTopTrends();
+      } else {
+        this.debouncedSearchTrends();
+      }
+    },
+  },
+  created() {
+    this.debouncedSearchTrends = _.debounce(this.searchTrends, 500);
+  },
+  methods: {
+    getTopTrends() {
+      this.trends = new Promise((resolve) => {
+        window.setTimeout(() => {
+          resolve(
+            axios
+              .get(`${process.env.VUE_APP_SENTO_API_ADDRESS}/trends/top`)
+              .then(response => response.data)
+              .catch(error => console.error(error)),
+          );
+        }, 500);
+      });
+    },
+    searchTrends() {
+      this.trends = new Promise((resolve) => {
+        window.setTimeout(() => {
+          resolve(
+            axios
+              .get(`${process.env.VUE_APP_SENTO_API_ADDRESS}/trends/search/${encodeURIComponent(this.searchQuery)}`)
+              .then(response => response.data)
+              .catch(error => console.error(error)),
+          );
+        }, 100);
+      });
+    },
+    onTrendSelected(selectedTrend) {
+      const trendName = selectedTrend.trend ? selectedTrend.trend : selectedTrend;
+      this.selectedTrend = trendName;
+      this.$emit('on-trend-selected', trendName);
+    },
   },
 };
 </script>
