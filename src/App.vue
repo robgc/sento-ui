@@ -29,33 +29,31 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
           v-show="currentTab === 'tab-map'"
           class="md-layout-item"
           :class="{
-            'md-size-100': !placeShowcaseVisible || (isMobileDisplay && currentTab === 'tab-map'),
-            'md-size-75': !isMobileDisplay && placeShowcaseVisible
+            'md-size-100': !isPlaceShowcaseActive || (isMobileDisplay && currentTab === 'tab-map'),
+            'md-size-70': !isMobileDisplay && isPlaceShowcaseActive
           }"
           id="map"
           ref="map"
           @on-layer-clicked="displayPlaceShowcase"
         />
         <the-showcase
-          v-show="(!isMobileDisplay && placeShowcaseVisible)
+          v-show="(!isMobileDisplay && isPlaceShowcaseActive)
             || (isMobileDisplay && currentTab === 'tab-data')
           "
           class="md-layout-item app-showcase"
           :class="{
             'md-size-100': isMobileDisplay && currentTab === 'tab-data',
-            'md-size-25': !isMobileDisplay && placeShowcaseVisible,
+            'md-size-30': !isMobileDisplay && isPlaceShowcaseActive,
           }"
-          v-if="selectedPlaceFeatures"
-          :key="showcaseKey"
+          v-if="selectedPlaceData"
           :isTimeLineData="false"
-          :placeName="selectedPlaceFeatures.name"
+          :placeData="selectedPlaceData"
           @on-back-clicked="removeShowcase"
         />
         <the-tabs-bar
           v-if="isMobileDisplay"
           :current-tab="currentTab"
-          :is-data-tab-disabled="!placeShowcaseVisible"
-          :key="tabBarKey"
+          :is-data-tab-disabled="isDataTabDisabled"
           @on-tab-change="handleTabChange"
         />
         <!-- <timeline /> -->
@@ -86,10 +84,8 @@ export default {
   data() {
     return {
       menuVisible: false,
-      placeShowcaseVisible: false,
-      selectedPlaceFeatures: undefined,
-      showcaseKey: 0,
-      tabBarKey: 0,
+      isPlaceShowcaseActive: false,
+      selectedPlaceData: undefined,
       isMobileDisplay: false,
       currentTab: tabsCatalog['tab-map'],
     };
@@ -105,15 +101,17 @@ export default {
     updateMenuVisibility(value) {
       this.menuVisible = value;
     },
-    async displayPlaceShowcase(placeFeatures) {
-      this.selectedPlaceFeatures = placeFeatures;
-      this.placeShowcaseVisible = true;
-      this.showcaseKey += 1;
-      this.tabBarKey += 1;
+    async displayPlaceShowcase(featureData) {
+      const mapComponent = this.$refs.map;
+      this.selectedPlaceData = featureData;
+      this.isPlaceShowcaseActive = true;
       await this.$nextTick();
-      this.$refs.map.resizeMap();
+      mapComponent.resizeMap();
       await this.$nextTick();
-      await this.$refs.map.flyToCurrentPlace();
+      if (this.isMobileDisplay) {
+        this.currentTab = tabsCatalog['tab-data'];
+      }
+      await mapComponent.flyToCurrentPlace();
     },
     handleResize() {
       this.isMobileDisplay = window.innerWidth <= 960;
@@ -125,11 +123,18 @@ export default {
       this.currentTab = tabsCatalog[destinationTabId];
     },
     async removeShowcase() {
-      this.placeShowcaseVisible = false;
+      const mapComponent = this.$refs.map;
+      this.isPlaceShowcaseActive = false;
       this.currentTab = tabsCatalog['tab-map'];
-      this.tabBarKey += 1;
       await this.$nextTick();
-      this.$refs.map.resizeMap();
+      mapComponent.resizeMap();
+      await this.$nextTick();
+      mapComponent.deselectCurrentFeature();
+    },
+  },
+  computed: {
+    isDataTabDisabled() {
+      return !this.isPlaceShowcaseActive;
     },
   },
 };
@@ -138,10 +143,13 @@ export default {
 <style scoped>
 #app-content {
   padding: 0;
+  border: 0;
 }
 
 #app {
-  min-height: 100%;
+  min-width: 320px;
+  min-height: 100vh;
+  overflow-x: hidden;
 }
 
 .app-showcase {

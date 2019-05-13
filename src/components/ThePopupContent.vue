@@ -16,34 +16,42 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 -->
 
 <template>
-  <div class="popup-content">
-    <div class="data">
-      {{ layerFeature }}
-    </div>
-    <figure class="bar">
-      <span class="block" title="Positivo" :style="{width: positivePercentage + '%'}">
+  <div class="md-layout popup-content">
+    <figure class="bar md-layout-item">
+      <span class="block" :style="{width: positivePercentage + '%'}">
         <span class="value">
           {{ positivePercentage.toFixed(2) }}%
         </span>
+        <md-tooltip md-direction="top">Positivo</md-tooltip>
       </span>
-      <span class="block" title="Neutro" :style="{width: neutralPercentage + '%'}">
+      <span class="block" :style="{width: neutralPercentage + '%'}">
         <span class="value">
           {{ neutralPercentage.toFixed(2) }}%
         </span>
+        <md-tooltip md-direction="top">Neutro</md-tooltip>
       </span>
-      <span class="block" title="Negativo" :style="{width: negativePercentage + '%'}">
+      <span class="block" :style="{width: negativePercentage + '%'}">
         <span class="value">
           {{ negativePercentage.toFixed(2) }}%
         </span>
+        <md-tooltip md-direction="top">Negativo</md-tooltip>
       </span>
     </figure>
+    <div class="md-layout md-layout-item">
+      <div class="md-layout-item">
+        <md-button :md-ripple="true" class="md-raised md-primary">Estudiar tendencia</md-button>
+      </div>
+      <div class="md-layout-item">
+        <md-button class="md-raised md-primary">Ver tendencia en Twitter</md-button>
+      </div>
+    </div>
   </div>
 </template>
 
 <script>
 
 export default {
-  name: 'PopupContent',
+  name: 'ThePopupContent',
   props: ['layerFeature'],
   computed: {
     positivePercentage() {
@@ -60,12 +68,17 @@ export default {
 </script>
 
 <style scoped>
+.popup-content {
+  flex-direction: column;
+  min-width: 0;
+}
+
 .data {
   margin: initial;
-  font-family: 'Open Sans', sans-serif;
 }
 
 .bar {
+  flex: 1;
   margin-bottom: 1em;
 }
 
@@ -79,7 +92,6 @@ export default {
 }
 
 .bar {
-  overflow: hidden;
   width: 0%;
   animation: expand 0.75s ease forwards;
   margin: initial;
@@ -101,21 +113,16 @@ export default {
   float: left;
   background-color: #21d35c;
   position: relative;
-  overflow: hidden;
   opacity: 1;
   transition: opacity, 0.3s ease;
 }
 
 .block:nth-of-type(2) {
-  background-color: #cf360f;
-}
-
-.block:nth-of-type(3) {
   background-color: #5d5f5f;
 }
 
-.block:hover {
-  opacity: 0.65;
+.block:nth-of-type(3) {
+  background-color: #cf360f;
 }
 
 .value {
@@ -123,6 +130,7 @@ export default {
   line-height: 1em;
   position: absolute;
   top: 50%;
+  bottom: 50%;
   left: 50%;
   transform: translate(-50%);
   font-weight: bold;

@@ -1,8 +1,9 @@
 <template>
-  <div id="tabs-bar" class="md-layout-item" :md-active-tab="currentTab">
+  <div id="tabs-bar" class="md-layout-item">
     <md-tabs
       class="md-primary"
       md-alignment="centered"
+      :md-active-tab="currentTab"
       @md-changed="onTabChange"
     >
       <md-tab id="tab-map" md-label="Mapa" />
@@ -27,7 +28,7 @@ export default {
 </script>
 
 <style scoped>
-@media (min-width: 960px) {
+@media (min-width: 961px) {
   #tabs-bar {
     display: none;
   }

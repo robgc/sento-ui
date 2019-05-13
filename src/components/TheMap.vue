@@ -34,14 +34,24 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
       <mgl-attribution-control position="bottom-right" />
 
       <mgl-geojson-layer
-        sourceId="sentoLocationsSource"
-        :source="geoJsonSource"
-        layerId="locationsLayer"
-        :layer="geoJsonLayer"
+        sourceId="locationsWithTrendsSource"
+        :source.sync="locationsWithTrends"
+        layerId="locationsWithTrendsLayer"
+        :layer="locationsWithTrendsLayer"
         @click="onLayerClicked"
         @mouseenter="onMouseEnter"
         @mouseleave="onMouseLeave"
       />
+
+      <mgl-geojson-layer
+        sourceId="selectedLocationSource"
+        :source.sync="getSelectedLocationSource"
+        layerId="selectedLocationLayer"
+        :layer="selectedLocationLayer"
+        :before="'locationsWithTrendsLayer'"
+        ref="selectedLocationLayerComponent"
+      />
+
       <mgl-popup
         :coordinates="coordinates"
         :closeButton="true"
@@ -59,6 +69,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 <script>
 import { Mapbox } from 'mapbox-gl';
+import axios from 'axios';
 import {
   MglMap, MglAttributionControl, MglGeojsonLayer, MglPopup,
 } from 'vue-mapbox';
@@ -76,23 +87,55 @@ export default {
   data() {
     return {
       mapStyle: 'https://omt.robser.duckdns.org/styles/positron/style.json',
-      geoJsonSource: { data: 'http://localhost:8000/locations.json' },
-      geoJsonLayer: {
-        id: 'locationsLayer',
-        source: 'sentoLocationsSource',
-        type: 'fill',
+
+      locationsWithTrends: {
+        data: {
+          type: 'FeatureCollection',
+          features: [],
+        },
+      },
+
+      selectedLocation: {
+        data: {
+          type: 'FeatureCollection',
+          features: [],
+        },
+      },
+
+      locationsWithTrendsLayer: {
+        id: 'locationsWithTrendsLayer',
+        source: 'locationsWithTrendsSource',
+        type: 'circle',
         paint: {
-          'fill-color': '#61a1f3',
+          'circle-color': '#448aff',
+          'circle-opacity': 0.8,
+          'circle-radius': 25,
+        },
+      },
+
+      selectedLocationLayer: {
+        id: 'selectedLocationLayer',
+        source: 'selectedLocationSource',
+        type: 'circle',
+        paint: {
+          'circle-color': '#78FFD6',
+          'circle-opacity': 0.8,
+          'circle-radius': 25,
         },
       },
       coordinates: undefined,
       layerFeature: { id: undefined, name: undefined },
+      currentFeature: undefined,
       isMapLoaded: false,
     };
   },
 
   created() {
     this.mapbox = Mapbox;
+  },
+
+  async mounted() {
+    await this.getLocationsWithTrendsSource();
   },
 
   methods: {
@@ -105,29 +148,85 @@ export default {
         speed: 1,
       });
     },
-    async onLayerClicked(event) {
+
+    // Interaction methods
+
+    onLayerClicked(event) {
       const { lngLat, features } = event.mapboxEvent;
       this.coordinates = [lngLat.lng, lngLat.lat];
 
-      this.$emit('on-layer-clicked', features[0].properties);
+      // Deselect the current feature if another feature has been selected
+      if (this.currentFeature) {
+        this.deselectCurrentFeature();
+      }
+
+      // Keep the selected feature, this way we can pass it to different layer sources
+      // eslint-disable-next-line prefer-destructuring
+      this.currentFeature = features[0];
+
+      // Remove the selected feature from the initially retrieved features
+      this.locationsWithTrends.data.features = this.locationsWithTrends.data.features.filter(
+        arrElement => arrElement.id !== this.currentFeature.id,
+      );
+
+      // Add the selected feature to the selection layer's source
+      this.selectedLocation.data.features = [this.currentFeature];
+
+      this.$emit('on-layer-clicked', { id: features[0].id, properties: features[0].properties });
 
       // this.layerFeature = features[0].properties;
       // this.$refs.clickPopup.$_addPopup();
     },
+
     onMouseEnter(event) {
       // eslint-disable-next-line no-param-reassign
       event.map.getCanvas().style.cursor = 'pointer';
     },
+
     onMouseLeave(event) {
       // eslint-disable-next-line no-param-reassign
       event.map.getCanvas().style.cursor = '';
     },
+
+    // Map visualization methods
+
     resizeMap() {
       this.$refs.baseMap.map.resize();
     },
+
     async flyToCurrentPlace() {
       const asyncActions = this.$refs.baseMap.actions;
       await asyncActions.flyTo({ center: this.coordinates });
+    },
+
+    deselectCurrentFeature() {
+      // Remove the selected feature from the "selected" layer
+      this.selectedLocation.features = [];
+
+      // Return the selected feature to the initial layer
+      this.locationsWithTrends.data.features.push(this.currentFeature);
+
+      // Remove the reference to the selected feature
+      this.currentFeature = undefined;
+    },
+
+    // Service consumption methods
+
+    async getLocationsWithTrendsSource() {
+      try {
+        const response = await axios.get(
+          `${process.env.VUE_APP_SENTO_API_ADDRESS}/map/active`,
+        );
+        this.locationsWithTrends.data = response.data;
+      } catch {
+        console.error('Failed to retrieve locations with current trends');
+      }
+    },
+  },
+
+  computed: {
+    getSelectedLocationSource() {
+      return this.selectedLocation;
     },
   },
 };
