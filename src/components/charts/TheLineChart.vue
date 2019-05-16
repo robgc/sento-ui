@@ -21,7 +21,7 @@ import { Line, mixins } from 'vue-chartjs';
 const { reactiveProp } = mixins;
 
 export default {
-  name: 'TheDoughnutChart',
+  name: 'TheLineChart',
   extends: Line,
   mixins: [reactiveProp],
   data() {
@@ -32,8 +32,11 @@ export default {
           xAxes: [{
             type: 'time',
             time: {
-              parser: 'DD/MM/YYYY HH:mm:ss',
-              tooltipFormat: 'll HH:mm:ss',
+              unit: 'minute',
+              displayFormats: {
+                minute: 'HH:mm',
+              },
+              tooltipFormat: 'LL HH:mm',
             },
             scaleLabel: {
               display: true,
@@ -43,6 +46,8 @@ export default {
           yAxes: [{
             ticks: {
               reverse: true,
+              stepSize: 1,
+              maxTicksLimit: 20,
             },
             scaleLabel: {
               display: true,
