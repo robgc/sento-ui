@@ -27,8 +27,29 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
         </md-button>
         <h3 class="md-title">Sento</h3>
       </div>
+
+      <md-dialog :md-active.sync="showSearchDialog" :md-fullscreen="false">
+        <md-autocomplete
+          class="search"
+          v-model="searchQuery"
+          :md-options="trends"
+          @md-opened="getTopTrends"
+          @md-selected="onTrendSelected"
+          md-layout="box"
+        >
+          <label>Buscar una tendencia...</label>
+          <template
+            slot="md-autocomplete-item"
+            slot-scope="{ item }"
+          >
+            {{ item.trend ? item.trend : item }}
+          </template>
+        </md-autocomplete>
+      </md-dialog>
+
       <md-autocomplete
         class="search"
+        v-show="!isMobileDisplay"
         v-model="searchQuery"
         :md-options="trends"
         @md-opened="getTopTrends"
@@ -45,6 +66,13 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
       </md-autocomplete>
 
       <div class="md-toolbar-section-end">
+        <md-button
+          class="md-icon-button"
+          v-show="isMobileDisplay"
+          @click="showSearchDialog = true"
+        >
+          <md-icon>search</md-icon>
+        </md-button>
       </div>
     </div>
   </md-app-toolbar>
@@ -61,10 +89,12 @@ export default {
       searchQuery: null,
       selectedTrend: null,
       trends: [],
+      showSearchDialog: false,
     };
   },
   props: {
-    menuVisible: Boolean,
+    menuVisible: { type: Boolean, required: true },
+    isMobileDisplay: { type: Boolean, required: true },
   },
   watch: {
     searchQuery(newQuery, oldQuery) {

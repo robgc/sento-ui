@@ -30,14 +30,14 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
             <md-icon>arrow_back</md-icon>
           </md-button>
           <h3
-            v-if="isTimeLineData"
+            v-if="isTrendData"
             class="md-title"
             style="flex: 1"
           >
-            Ranking para {{ trendName }}
+            Resumen de <i>{{ trendName }}</i>
           </h3>
           <h3
-            v-if="!isTimeLineData"
+            v-if="!isTrendData"
             class="md-title"
             style="flex: 1"
           >
@@ -55,120 +55,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
           </transition>
         </md-content>
       </md-content>
-      <md-divider />
-      <md-content class="md-layout md-scrollbar" id="showcase-table-section">
-        <!-- <md-content class="md-layout-item md-scrollbar">
-          <md-steppers
-            class="md-scrollbar"
-            md-vertical
-          >
-            <md-step
-              id="first"
-              md-label="First"
-            >
-              <md-table
-                v-model="items"
-                md-fixed-header
-                @md-selected="onRowSelection"
-              >
-                <md-table-row
-                  slot="md-table-row"
-                  slot-scope="{ item }"
-                  md-selectable="single"
-                >
-                  <md-table-cell
-                    v-if="!isTimeLineData"
-                    md-label="Tendencia"
-                  >
-                    {{ item.trendName }}
-                  </md-table-cell>
-                  <md-table-cell
-                    v-if="isTimeLineData"
-                    md-label="Lugar"
-                  >
-                    {{ item.place }}
-                  </md-table-cell>
-                  <md-table-cell
-                    md-label="Posición"
-                    md-numeric
-                  >
-                    {{ item.position }}
-                  </md-table-cell>
-                </md-table-row>
-              </md-table>
-            </md-step>
-            <md-step
-              id="second"
-              md-label="Second"
-            >
-              <md-table
-                v-model="items"
-                md-fixed-header
-                @md-selected="onRowSelection"
-              >
-                <md-table-row
-                  slot="md-table-row"
-                  slot-scope="{ item }"
-                  md-selectable="single"
-                >
-                  <md-table-cell
-                    v-if="!isTimeLineData"
-                    md-label="Tendencia"
-                  >
-                    {{ item.trendName }}
-                  </md-table-cell>
-                  <md-table-cell
-                    v-if="isTimeLineData"
-                    md-label="Lugar"
-                  >
-                    {{ item.place }}
-                  </md-table-cell>
-                  <md-table-cell
-                    md-label="Posición"
-                    md-numeric
-                  >
-                    {{ item.position }}
-                  </md-table-cell>
-                </md-table-row>
-              </md-table>
-            </md-step>
-            <md-step
-              id="third"
-              md-label="Third"
-            >
-              <md-table
-                v-model="items"
-                md-fixed-header
-                @md-selected="onRowSelection"
-              >
-                <md-table-row
-                  slot="md-table-row"
-                  slot-scope="{ item }"
-                  md-selectable="single"
-                >
-                  <md-table-cell
-                    v-if="!isTimeLineData"
-                    md-label="Tendencia"
-                  >
-                    {{ item.trendName }}
-                  </md-table-cell>
-                  <md-table-cell
-                    v-if="isTimeLineData"
-                    md-label="Lugar"
-                  >
-                    {{ item.place }}
-                  </md-table-cell>
-                  <md-table-cell
-                    md-label="Posición"
-                    md-numeric
-                  >
-                    {{ item.position }}
-                  </md-table-cell>
-                </md-table-row>
-              </md-table>
-            </md-step>
-          </md-steppers>
-        </md-content> -->
+      <md-divider v-show="!isTrendData" />
+      <md-content v-show="!isTrendData" class="md-layout md-scrollbar" id="showcase-table-section">
         <md-content class="md-layout-item">
           <md-table
             v-model="items"
@@ -180,12 +68,9 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
               slot-scope="{ item }"
               md-selectable="single"
             >
-              <md-table-cell v-if="!isTimeLineData" md-label="Tendencia">
+              <md-table-cell md-label="Tendencia">
                 {{ item.topic_id }}
               </md-table-cell>
-              <!-- <md-table-cell v-if="isTimeLineData" md-label="Lugar">
-                {{ item.place }}
-              </md-table-cell> -->
               <md-table-cell md-label="Posición" md-numeric>
                 {{ item.ranking_no }}
               </md-table-cell>
@@ -209,13 +94,13 @@ export default {
     TheEmptyState,
   },
   props: {
-    isTimeLineData: { type: Boolean, required: true },
     placeData: { type: Object, required: false },
     trendName: { type: String, required: false },
   },
   data() {
     return {
       items: [],
+      isTrendData: false,
       selectedItem: undefined,
       sentimentData: {
         positiveCount: 0,
@@ -250,14 +135,24 @@ export default {
         console.log(error);
       }
     },
+    async trendName() {
+      this.isTrendData = true;
+      this.items = [];
+    },
   },
   async created() {
-    await this.getDataForTrendRanking();
+    if (this.placeData) {
+      await this.getDataForTrendRanking();
+    } else {
+      this.isTrendData = true;
+      console.log('TODO: RECOGER DATOS PARA UNA TENDENCIA');
+    }
   },
   methods: {
     cleanTrendSelection() {
       this.$emit('on-back-clicked', this.$event);
       this.selectedItem = undefined;
+      this.isTrendData = false;
     },
     async onRowSelection(item) {
       this.selectedItem = item;
@@ -270,7 +165,7 @@ export default {
           `${process.env.VUE_APP_SENTO_API_ADDRESS}/trends/${this.placeData.id}`,
         )).data;
       } catch (error) {
-        console.log(error);
+        console.error(error);
       }
     },
     async getSentimentDataForPlace() {

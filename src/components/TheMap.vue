@@ -35,6 +35,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
       <mgl-geojson-layer
         sourceId="locationsWithTrendsSource"
+        v-if="!isTrendFocused"
         :source.sync="locationsWithTrends"
         layerId="locationsWithTrendsLayer"
         :layer="locationsWithTrendsLayer"
@@ -45,6 +46,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
       <mgl-geojson-layer
         sourceId="selectedLocationSource"
+        v-if="!isTrendFocused"
         :source.sync="getSelectedLocationSource"
         layerId="selectedLocationLayer"
         :layer="selectedLocationLayer"
@@ -52,17 +54,12 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
         ref="selectedLocationLayerComponent"
       />
 
-      <mgl-popup
-        :coordinates="coordinates"
-        :closeButton="true"
-        :closeOnClick="true"
-        :anchor="'bottom'"
-        :offset="5"
-        ref="clickPopup"
-      >
-        <the-popup-content :layerFeature="layerFeature" />
-      </mgl-popup>
-
+      <mgl-geojson-layer
+        sourceId="locationsFromSearchedTrendSource"
+        :source.sync="locationsFromSearchedTrend"
+        layerId="locationsFromSearchedTrendLayer"
+        :layer="locationsFromSearchedTrendLayer"
+      />
     </mgl-map>
   </div>
 </template>
@@ -71,9 +68,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 import { Mapbox } from 'mapbox-gl';
 import axios from 'axios';
 import {
-  MglMap, MglAttributionControl, MglGeojsonLayer, MglPopup,
+  MglMap, MglAttributionControl, MglGeojsonLayer,
 } from 'vue-mapbox';
-import ThePopupContent from './ThePopupContent.vue';
 
 export default {
   name: 'TheMap',
@@ -81,8 +77,6 @@ export default {
     MglMap,
     MglAttributionControl,
     MglGeojsonLayer,
-    MglPopup,
-    ThePopupContent,
   },
   data() {
     return {
@@ -96,6 +90,13 @@ export default {
       },
 
       selectedLocation: {
+        data: {
+          type: 'FeatureCollection',
+          features: [],
+        },
+      },
+
+      locationsFromSearchedTrend: {
         data: {
           type: 'FeatureCollection',
           features: [],
@@ -123,18 +124,58 @@ export default {
           'circle-radius': 25,
         },
       },
+
+      locationsFromSearchedTrendLayer: {
+        id: 'locationsFromSearchedTrendLayer',
+        source: 'locationsFromSearchedTrendSource',
+        type: 'circle',
+        paint: {
+          'circle-color': '#448aff',
+          'circle-opacity': 0.8,
+          'circle-radius': 25,
+        },
+      },
+
       coordinates: undefined,
       layerFeature: { id: undefined, name: undefined },
       currentFeature: undefined,
       isMapLoaded: false,
+      isTrendFocused: false,
     };
   },
 
-  created() {
-    this.mapbox = Mapbox;
+  props: {
+    searchedTrend: { type: String, required: false },
   },
 
-  async mounted() {
+  watch: {
+    async searchedTrend(newValue) {
+      this.isMapLoaded = false;
+      this.isTrendFocused = true;
+
+      try {
+        const response = await axios.get(
+          `${process.env.VUE_APP_SENTO_API_ADDRESS}/map/${encodeURIComponent(newValue)}`,
+        );
+
+        if (response.data.features !== null) {
+          this.locationsFromSearchedTrend.data = response.data;
+        } else {
+          this.locationsFromSearchedTrend.data = {
+            type: 'FeatureCollection',
+            features: [],
+          };
+        }
+      } catch {
+        console.error('Failed to retrieve locations with current trends');
+      } finally {
+        this.isMapLoaded = true;
+      }
+    },
+  },
+
+  async created() {
+    this.mapbox = Mapbox;
     await this.getLocationsWithTrendsSource();
   },
 

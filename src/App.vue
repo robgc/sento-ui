@@ -21,7 +21,9 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
       <the-toolbar
         slot="md-app-toolbar"
         :menuVisible="menuVisible"
+        :isMobileDisplay="isMobileDisplay"
         @on-menu-click="updateMenuVisibility"
+        @on-trend-selected="displayTrendInformation"
       />
       <md-app-drawer :md-active.sync="menuVisible" />
       <md-app-content class="md-layout" id="app-content">
@@ -32,6 +34,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
             'md-size-100': !isPlaceShowcaseActive || (isMobileDisplay && currentTab === 'tab-map'),
             'md-size-70': !isMobileDisplay && isPlaceShowcaseActive
           }"
+          :searchedTrend="searchedTrend"
           id="map"
           ref="map"
           @on-layer-clicked="displayPlaceShowcase"
@@ -45,8 +48,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
             'md-size-100': isMobileDisplay && currentTab === 'tab-data',
             'md-size-30': !isMobileDisplay && isPlaceShowcaseActive,
           }"
-          v-if="selectedPlaceData"
-          :isTimeLineData="false"
+          v-if="selectedPlaceData || searchedTrend"
+          :trendName="searchedTrend"
           :placeData="selectedPlaceData"
           @on-back-clicked="removeShowcase"
         />
@@ -86,6 +89,7 @@ export default {
       menuVisible: false,
       isPlaceShowcaseActive: false,
       selectedPlaceData: undefined,
+      searchedTrend: undefined,
       isMobileDisplay: false,
       currentTab: tabsCatalog['tab-map'],
     };
@@ -101,6 +105,7 @@ export default {
     updateMenuVisibility(value) {
       this.menuVisible = value;
     },
+
     async displayPlaceShowcase(featureData) {
       const mapComponent = this.$refs.map;
       this.selectedPlaceData = featureData;
@@ -113,15 +118,30 @@ export default {
       }
       await mapComponent.flyToCurrentPlace();
     },
+
+    async displayTrendInformation(trendName) {
+      const mapComponent = this.$refs.map;
+      this.searchedTrend = trendName;
+      this.isPlaceShowcaseActive = true;
+      await this.$nextTick();
+      mapComponent.resizeMap();
+      await this.$nextTick();
+      if (this.isMobileDisplay) {
+        this.currentTab = tabsCatalog['tab-data'];
+      }
+    },
+
     handleResize() {
       this.isMobileDisplay = window.innerWidth <= 960;
       if (!this.isMobileDisplay) {
         this.currentTab = tabsCatalog['tab-map'];
       }
     },
+
     handleTabChange(destinationTabId) {
       this.currentTab = tabsCatalog[destinationTabId];
     },
+
     async removeShowcase() {
       const mapComponent = this.$refs.map;
       this.isPlaceShowcaseActive = false;
