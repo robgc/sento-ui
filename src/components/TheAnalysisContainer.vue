@@ -23,9 +23,11 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
           Evolución en el ranking
         </div>
       </md-card-header>
-      <md-card-content>
+      <md-card-content class="md-scrollbar" id="ranking-chart-card-content">
         <the-line-chart
           class="md-layout-item chart-container"
+          :style="{'overflow-x': 'auto', width: this.rankingData.length * 5 + 'vw'}"
+          id="ranking-chart-wrapper"
           :chart-data="rankingChartData"
         />
       </md-card-content>
@@ -125,13 +127,49 @@ export default {
   flex-direction: column;
 }
 
-.chart-container {
-  height: 25vh;
-  max-height: 25vh;
+#ranking-chart-card-content {
+  padding-left: 0;
+  margin-left: 16px;
+  overflow-x: auto;
+}
+
+#ranking-chart-wrapper {
+  overflow-x: auto;
+  width: 100vw;
 }
 
 .analysis-container-card {
   margin-top: 5px;
   margin-bottom: 5px;
+}
+
+@media (max-width: 601px) {
+  #ranking-chart-card-content {
+    max-width: 75vw;
+  }
+  .chart-container {
+    height: 35vh;
+    max-height: 35vh;
+  }
+}
+
+@media (min-width: 601px) {
+  #ranking-chart-card-content {
+    max-width: 90vw;
+  }
+  .chart-container {
+    height: 30vh;
+    max-height: 30vh;
+  }
+}
+
+@media (min-width: 961px) {
+  #ranking-chart-card-content {
+    max-width: 25vw;
+  }
+  .chart-container {
+    height: 25vh;
+    max-height: 25vh;
+  }
 }
 </style>
