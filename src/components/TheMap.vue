@@ -59,6 +59,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
         :source.sync="locationsFromSearchedTrend"
         layerId="locationsFromSearchedTrendLayer"
         :layer="locationsFromSearchedTrendLayer"
+        :before="'locationsWithTrendsLayer'"
       />
     </mgl-map>
   </div>
@@ -66,10 +67,12 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 <script>
 import { Mapbox } from 'mapbox-gl';
-import axios from 'axios';
 import {
   MglMap, MglAttributionControl, MglGeojsonLayer,
 } from 'vue-mapbox';
+import RepositoryFactory from '../repositories/RepositoryFactory';
+
+const MapRepository = RepositoryFactory.get('map');
 
 export default {
   name: 'TheMap',
@@ -150,25 +153,20 @@ export default {
 
   watch: {
     async searchedTrend(newValue) {
-      this.isMapLoaded = false;
-      this.isTrendFocused = true;
+      if (!(newValue === undefined || newValue === null)) {
+        this.isMapLoaded = false;
+        this.isTrendFocused = true;
 
-      try {
-        const response = await axios.get(
-          `${process.env.VUE_APP_SENTO_API_ADDRESS}/map/${encodeURIComponent(newValue)}`,
-        );
+        const trendZones = await MapRepository.getTrendZones(newValue);
 
-        if (response.data.features !== null) {
-          this.locationsFromSearchedTrend.data = response.data;
+        if (trendZones && trendZones.features !== null) {
+          this.locationsFromSearchedTrend.data = trendZones;
         } else {
           this.locationsFromSearchedTrend.data = {
             type: 'FeatureCollection',
             features: [],
           };
         }
-      } catch {
-        console.error('Failed to retrieve locations with current trends');
-      } finally {
         this.isMapLoaded = true;
       }
     },
@@ -254,14 +252,17 @@ export default {
     // Service consumption methods
 
     async getLocationsWithTrendsSource() {
-      try {
-        const response = await axios.get(
-          `${process.env.VUE_APP_SENTO_API_ADDRESS}/map/active`,
-        );
-        this.locationsWithTrends.data = response.data;
-      } catch {
-        console.error('Failed to retrieve locations with current trends');
-      }
+      this.isTrendFocused = false;
+      this.locationsFromSearchedTrend.data.features = [];
+      this.selectedLocation = {
+        data: {
+          type: 'FeatureCollection',
+          features: [],
+        },
+      };
+
+      const activeZones = await MapRepository.getActiveZones();
+      this.locationsWithTrends.data = activeZones;
     },
   },
 
@@ -274,36 +275,6 @@ export default {
 </script>
 
 <style scoped>
-@media (max-width: 601px) {
-  .mgl-map-wrapper,
-  .mapboxgl-map,
-  .mapboxgl-canvas {
-    /* Remove toolbar's and tab bar's height */
-    max-width: 100%;
-    min-height: calc(100vh - 56px - 48px);
-  }
-}
-
-@media (min-width: 601px) {
-  .mgl-map-wrapper,
-  .mapboxgl-map,
-  .mapboxgl-canvas {
-    max-width: 100%;
-    /* Remove toolbar's and tab bar's height */
-    min-height: calc(100vh - 48px - 48px);
-  }
-}
-
-@media (min-width: 961px) {
-  .mgl-map-wrapper,
-  .mapboxgl-map,
-  .mapboxgl-canvas {
-    max-width: 100%;
-    /* Remove the toolbar's height */
-    min-height: calc(100vh - 64px);
-  }
-}
-
 .map-loading {
   position: absolute;
   z-index: 10;

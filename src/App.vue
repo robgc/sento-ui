@@ -16,16 +16,19 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 -->
 
 <template>
-  <div class="page-container" id="app">
+  <div class="page-container" id="app-container">
     <md-app>
       <the-toolbar
         slot="md-app-toolbar"
         :menuVisible="menuVisible"
         :isMobileDisplay="isMobileDisplay"
+        :clearSearchContent="clearSearchContent"
         @on-menu-click="updateMenuVisibility"
         @on-trend-selected="displayTrendInformation"
       />
-      <md-app-drawer :md-active.sync="menuVisible" />
+      <md-app-drawer :md-active.sync="menuVisible">
+        <the-help/>
+      </md-app-drawer>
       <md-app-content class="md-layout" id="app-content">
         <the-map
           v-show="currentTab === 'tab-map'"
@@ -51,15 +54,16 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
           v-if="selectedPlaceData || searchedTrend"
           :trendName="searchedTrend"
           :placeData="selectedPlaceData"
+          :isMobileDisplay="isMobileDisplay"
           @on-back-clicked="removeShowcase"
+          @on-study-trend="displayTrendInformation"
         />
         <the-tabs-bar
-          v-if="isMobileDisplay"
+          v-show="isMobileDisplay"
           :current-tab="currentTab"
           :is-data-tab-disabled="isDataTabDisabled"
           @on-tab-change="handleTabChange"
         />
-        <!-- <timeline /> -->
       </md-app-content>
     </md-app>
   </div>
@@ -70,6 +74,7 @@ import TheMap from './components/TheMap.vue';
 import TheToolbar from './components/TheToolbar.vue';
 import TheTabsBar from './components/TheTabsBar.vue';
 import TheShowcase from './components/TheShowcase.vue';
+import TheHelp from './components/TheHelp.vue';
 
 const tabsCatalog = {
   'tab-map': 'tab-map',
@@ -83,6 +88,7 @@ export default {
     TheMap,
     TheTabsBar,
     TheShowcase,
+    TheHelp,
   },
   data() {
     return {
@@ -92,6 +98,7 @@ export default {
       searchedTrend: undefined,
       isMobileDisplay: false,
       currentTab: tabsCatalog['tab-map'],
+      clearSearchContent: 0,
     };
   },
   created() {
@@ -142,14 +149,26 @@ export default {
       this.currentTab = tabsCatalog[destinationTabId];
     },
 
-    async removeShowcase() {
+    async removeShowcase(showcaseContext) {
       const mapComponent = this.$refs.map;
+      // Hide showcase
       this.isPlaceShowcaseActive = false;
       this.currentTab = tabsCatalog['tab-map'];
+
+      // Remove values from data keys that are props of the showcase
+      this.searchedTrend = undefined;
+      this.selectedPlaceData = undefined;
+
+      // Refresh map information
       await this.$nextTick();
+      if (showcaseContext.wasTrendData) {
+        await mapComponent.getLocationsWithTrendsSource();
+        this.clearSearchContent += 1;
+      } else {
+        mapComponent.deselectCurrentFeature();
+      }
       mapComponent.resizeMap();
       await this.$nextTick();
-      mapComponent.deselectCurrentFeature();
     },
   },
   computed: {
@@ -166,14 +185,62 @@ export default {
   border: 0;
 }
 
-#app {
+#app-container {
   min-width: 320px;
-  min-height: 100vh;
+  min-height: 100%;
+  height: 100%;
   overflow-x: hidden;
+}
+
+#app-container >>> .md-app,
+#app-container >>> .md-app-container {
+  min-height: 100%;
+  height: 100%;
+  max-height: 100%;
 }
 
 .app-showcase {
   margin-left: 0;
   margin-right: 0;
+}
+
+@media (max-width: 601px) {
+  #app-container >>> .md-app-scroller {
+    min-height: calc(100% - 56px);
+    max-height: calc(100% - 56px);
+    height: calc(100% - 56px);
+  }
+}
+
+@media (min-width: 601px) {
+  #app-container >>> .md-app-scroller {
+    min-height: calc(100% - 48px);
+    max-height: calc(100% - 48px);
+    height: calc(100% - 48px);
+  }
+}
+
+@media (max-width: 961px) {
+  .app-showcase,
+  #map {
+    min-height: calc(100% - 48px);
+    max-height: calc(100% - 48px);
+    height: calc(100% - 48px);
+  }
+}
+
+@media (min-width: 961px) {
+  #app-container >>> .md-app-scroller {
+    min-height: calc(100% - 64px);
+    max-height: calc(100% - 64px);
+    height: calc(100% - 64px);
+  }
+
+  .app-showcase,
+  #map {
+    min-height: 100%;
+    max-height: 100%;
+    height: 100%;
+  }
 }
 </style>

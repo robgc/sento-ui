@@ -16,7 +16,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 -->
 
 <template>
-  <div class="md-layout analysis-container">
+  <md-content class="md-layout analysis-container">
     <md-card class="analysis-container-card">
       <md-card-header>
         <div class="md-title">
@@ -24,11 +24,12 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
         </div>
       </md-card-header>
       <md-card-content class="md-scrollbar" id="ranking-chart-card-content">
-        <the-line-chart
-          class="md-layout-item chart-container"
-          :style="{'overflow-x': 'auto', width: this.rankingData.length * 5 + 'vw'}"
+        <component
           id="ranking-chart-wrapper"
-          :chart-data="rankingChartData"
+          class="md-layout-item chart-container"
+          :style="rankingComponentStyle"
+          :is="rankingComponentType"
+          v-bind="rankingComponentProps"
         />
       </md-card-content>
     </md-card>
@@ -39,45 +40,107 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
         </div>
       </md-card-header>
       <md-card-content>
-        <the-doughnut-chart
-          class="md-layout-item chart-container"
-          :chart-data="sentimentChartData"
+        <component
+          :class="{
+            'md-layout-item chart-container': this.sentimentData.totalCount !== 0
+          }"
+          :is="sentimentComponentType"
+          v-bind="sentimentComponentProps"
         />
       </md-card-content>
     </md-card>
     <md-divider />
     <div class="md-layout md-layout-item">
       <div class="md-layout-item">
-        <md-button class="md-raised md-primary" :md-ripple="true">
+        <md-button
+          v-show="this.rankingData.length"
+          class="md-raised md-primary"
+          @click="$emit('on-study-trend', trendId)"
+        >
           Estudiar tendencia
         </md-button>
       </div>
       <div class="md-layout-item">
-        <md-button class="md-raised md-primary">
+        <md-button class="md-raised md-primary" @click="openTwitterTab">
           Ver tendencia en Twitter
         </md-button>
       </div>
     </div>
-  </div>
+  </md-content>
 </template>
 
 <script>
 import * as _ from 'lodash';
 import TheDoughnutChart from './charts/TheDoughnutChart.vue';
 import TheLineChart from './charts/TheLineChart.vue';
-
+import TheScatterChart from './charts/TheScatterChart.vue';
+import NoData from './NoData.vue';
+import COLOR_RAMP from '../constants';
 
 export default {
   name: 'TheAnalysisContainer',
+
   components: {
     TheDoughnutChart,
     TheLineChart,
+    TheScatterChart,
+    NoData,
   },
+
   props: {
     sentimentData: { type: Object, required: true },
-    rankingData: { type: Array, required: true },
+    rankingData: { type: Array, required: false },
+    globalRankingData: { type: Array, required: false },
+    trendId: { type: String, required: true },
+    isMobileDisplay: { type: Boolean, required: true },
   },
+
   computed: {
+    rankingComponentType() {
+      if (this.rankingData.length) {
+        return 'TheLineChart';
+      }
+      return 'TheScatterChart';
+    },
+
+    sentimentComponentType() {
+      if (this.sentimentData.totalCount !== 0) {
+        return 'TheDoughnutChart';
+      }
+      return 'NoData';
+    },
+
+    rankingComponentStyle() {
+      const numberOfDataPoints = this.rankingData.length > 0
+        ? this.rankingData.length : this.globalRankingChartData.labels.length;
+
+      if (!this.isMobileDisplay) {
+        if (numberOfDataPoints * 5 < 25) {
+          return { width: '25vw' };
+        }
+        return { width: `${numberOfDataPoints * 5}vw` };
+      }
+
+      if (numberOfDataPoints * 15 < 95) {
+        return { width: '95vw' };
+      }
+      return { width: `${numberOfDataPoints * 15}vw` };
+    },
+
+    rankingComponentProps() {
+      if (this.rankingData.length) {
+        return { chartData: this.rankingChartData };
+      }
+      return { chartData: this.globalRankingChartData };
+    },
+
+    sentimentComponentProps() {
+      if (this.sentimentData.totalCount !== 0) {
+        return { chartData: this.sentimentChartData };
+      }
+      return {};
+    },
+
     sentimentChartData() {
       return {
         datasets: [{
@@ -99,6 +162,7 @@ export default {
         ],
       };
     },
+
     rankingChartData() {
       const dateLabels = [];
       const dateValues = [];
@@ -118,12 +182,62 @@ export default {
         labels: dateLabels,
       };
     },
+
+    globalRankingChartData() {
+      const chartDatasets = [];
+      const availableRamp = [...COLOR_RAMP];
+      let rankingItemDates = [];
+
+      _.forEach(this.globalRankingData, (rankingItem) => {
+        const rankingItemColor = _.pullAt(availableRamp, 0)[0];
+        const rankingItemPositions = [];
+
+        _.forEach(rankingItem.evolution, (evolutionPoint) => {
+          const evolutionTs = new Date(evolutionPoint.timestamp);
+
+          if (!_.find(rankingItemDates, date => date.getTime() === evolutionTs.getTime())) {
+            rankingItemDates.push(evolutionTs);
+          }
+
+          rankingItemPositions.push({
+            x: evolutionTs,
+            y: evolutionPoint.position,
+          });
+        });
+
+        chartDatasets.push(
+          {
+            label: rankingItem.location,
+            fill: false,
+            data: rankingItemPositions,
+            borderColor: rankingItemColor,
+            backgroundColor: rankingItemColor,
+          },
+        );
+      });
+
+      rankingItemDates = _.sortBy(rankingItemDates);
+
+      return {
+        datasets: chartDatasets,
+        labels: rankingItemDates,
+      };
+    },
+  },
+
+  methods: {
+    openTwitterTab() {
+      window.open(
+        `https://twitter.com/search?q=${encodeURIComponent(this.trendId)}`, '_blank',
+      );
+    },
   },
 };
 </script>
 
 <style>
 .analysis-container {
+  height: 100%;
   flex-direction: column;
 }
 
@@ -139,8 +253,13 @@ export default {
 }
 
 .analysis-container-card {
+  height: 35vh;
   margin-top: 5px;
   margin-bottom: 5px;
+}
+
+#showcase-analysis-section > div {
+  max-height: 100%;
 }
 
 @media (max-width: 601px) {
@@ -148,8 +267,8 @@ export default {
     max-width: 75vw;
   }
   .chart-container {
-    height: 35vh;
-    max-height: 35vh;
+    height: 60%;
+    max-height: 60%;
   }
 }
 
@@ -158,8 +277,8 @@ export default {
     max-width: 90vw;
   }
   .chart-container {
-    height: 30vh;
-    max-height: 30vh;
+    height: 65%;
+    max-height: 65%;
   }
 }
 
@@ -168,8 +287,8 @@ export default {
     max-width: 25vw;
   }
   .chart-container {
-    height: 25vh;
-    max-height: 25vh;
+    height: 65%;
+    max-height: 65%;
   }
 }
 </style>

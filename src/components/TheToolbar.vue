@@ -25,10 +25,9 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
         >
           <md-icon>menu</md-icon>
         </md-button>
-        <h3 class="md-title">Sento</h3>
       </div>
 
-      <md-dialog :md-active.sync="showSearchDialog" :md-fullscreen="false">
+      <md-dialog id="autocomplete-dialog" :md-active.sync="showSearchDialog" :md-fullscreen="false">
         <md-autocomplete
           class="search"
           v-model="searchQuery"
@@ -79,14 +78,16 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 </template>
 
 <script>
-import axios from 'axios';
 import * as _ from 'lodash';
+import RepositoryFactory from '../repositories/RepositoryFactory';
+
+const TrendsRepository = RepositoryFactory.get('trends');
 
 export default {
   name: 'TheToolbar',
   data() {
     return {
-      searchQuery: null,
+      searchQuery: '',
       selectedTrend: null,
       trends: [],
       showSearchDialog: false,
@@ -95,6 +96,7 @@ export default {
   props: {
     menuVisible: { type: Boolean, required: true },
     isMobileDisplay: { type: Boolean, required: true },
+    clearSearchContent: { type: Number, required: true },
   },
   watch: {
     searchQuery(newQuery, oldQuery) {
@@ -104,6 +106,9 @@ export default {
         this.debouncedSearchTrends();
       }
     },
+    clearSearchContent() {
+      Object.assign(this.$data, this.$options.data.apply(this));
+    },
   },
   created() {
     this.debouncedSearchTrends = _.debounce(this.searchTrends, 500);
@@ -112,30 +117,21 @@ export default {
     getTopTrends() {
       this.trends = new Promise((resolve) => {
         window.setTimeout(() => {
-          resolve(
-            axios
-              .get(`${process.env.VUE_APP_SENTO_API_ADDRESS}/trends/top`)
-              .then(response => response.data)
-              .catch(error => console.error(error)),
-          );
+          resolve(TrendsRepository.getTopTrends());
         }, 500);
       });
     },
     searchTrends() {
       this.trends = new Promise((resolve) => {
         window.setTimeout(() => {
-          resolve(
-            axios
-              .get(`${process.env.VUE_APP_SENTO_API_ADDRESS}/trends/search/${encodeURIComponent(this.searchQuery)}`)
-              .then(response => response.data)
-              .catch(error => console.error(error)),
-          );
+          resolve(TrendsRepository.searchTrend(this.searchQuery));
         }, 100);
       });
     },
     onTrendSelected(selectedTrend) {
       const trendName = selectedTrend.trend ? selectedTrend.trend : selectedTrend;
       this.selectedTrend = trendName;
+      this.showSearchDialog = false;
       this.$emit('on-trend-selected', trendName);
     },
   },
@@ -145,5 +141,9 @@ export default {
 <style scoped>
 .search {
   max-width: 500px;
+}
+
+#autocomplete-dialog {
+  z-index: 8;
 }
 </style>
