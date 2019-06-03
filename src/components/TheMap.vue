@@ -80,7 +80,7 @@ export default {
   },
   data() {
     return {
-      mapStyle: 'https://omt.robser.duckdns.org/styles/positron/style.json',
+      mapStyle: `${process.env.VUE_APP_SENTO_MAP_STYLE_URL}`,
 
       locationsWithTrends: {
         data: {
