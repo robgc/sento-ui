@@ -82,10 +82,10 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
               md-selectable="single"
             >
               <md-table-cell md-label="Tendencia">
-                {{ item.topic_id }}
+                {{ item.topicId }}
               </md-table-cell>
               <md-table-cell md-label="Posición" md-numeric>
-                {{ item.ranking_no }}
+                {{ item.rankingNo }}
               </md-table-cell>
             </md-table-row>
           </md-table>
@@ -146,7 +146,7 @@ export default {
         rankingData: this.rankingData,
         globalRankingData: this.globalRankingData,
         isMobileDisplay: this.isMobileDisplay,
-        trendId: this.selectedItem ? this.selectedItem.topic_id : this.trendName,
+        trendId: this.selectedItem ? this.selectedItem.topicId : this.trendName,
       };
     },
   },
@@ -218,7 +218,7 @@ export default {
 
     async getSentimentDataForTrendInPlace() {
       const respData = await ReportsRepository.getSentimentReport(
-        this.selectedItem.topic_id, this.placeData.id,
+        this.selectedItem.topicId, this.placeData.id,
       );
 
       this.sentimentData = {
@@ -231,7 +231,7 @@ export default {
 
     async getRankingDataForPlace() {
       const rankingData = await TrendsRepository.getTrendEvolution(
-        this.placeData.id, this.selectedItem.topic_id,
+        this.placeData.id, this.selectedItem.topicId,
       );
 
       this.rankingData = rankingData;
