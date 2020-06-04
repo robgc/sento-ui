@@ -18,5 +18,5 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 import axios from 'axios';
 
 export default axios.create({
-  baseURL: `${process.env.VUE_APP_SENTO_API_ADDRESS}/api/v1`,
+  baseURL: `${process.env.VUE_APP_SENTO_API_ADDRESS}/api/v2.0`,
 });

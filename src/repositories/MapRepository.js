@@ -17,7 +17,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 import Repository from './Repository';
 
-const resource = '/map';
+const resource = '/maps';
 
 export default {
   async getActiveZones() {
@@ -36,7 +36,7 @@ export default {
     let result;
 
     try {
-      result = (await Repository.get(`${resource}/${encodeURIComponent(trendId)}`)).data;
+      result = (await Repository.get(`${resource}/trends/${encodeURIComponent(trendId)}`)).data;
     } catch {
       console.error(`Could not retrieve the trends for ${trendId}`);
     }

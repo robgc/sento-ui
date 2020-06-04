@@ -25,7 +25,7 @@ export default {
 
     try {
       response = (await Repository.get(
-        `${resource}/sentiment/${encodeURIComponent(topicId)}`,
+        `${resource}/sentiment/trends/${encodeURIComponent(topicId)}`,
       )).data;
     } catch {
       console.error(`Could not retrieve the sentiment report for ${topicId}`);
@@ -39,7 +39,7 @@ export default {
 
     try {
       response = (await Repository.get(
-        `${resource}/sentiment/${encodeURIComponent(topicId)}/${locationId}`,
+        `${resource}/sentiment/trends/${encodeURIComponent(topicId)}/locations/${locationId}`,
       )).data;
     } catch {
       console.error(`Could not retrieve the sentiment report for ${topicId} in ${locationId}`);

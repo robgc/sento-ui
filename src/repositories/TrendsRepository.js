@@ -24,7 +24,7 @@ export default {
     let result;
 
     try {
-      result = (await Repository.get(`${resource}/${locationId}`)).data;
+      result = (await Repository.get(`${resource}?woeid=${locationId}`)).data;
     } catch {
       console.error(`Could not retrieve the current trends for location ${locationId}`);
     }
@@ -37,7 +37,7 @@ export default {
 
     try {
       result = (await Repository.get(
-        `${resource}/evolution/${encodeURIComponent(trendId)}`,
+        `${resource}/evolution/trends/${encodeURIComponent(trendId)}`,
       )).data;
     } catch {
       console.error(`Could not retrieve the evolution of trend ${trendId} in all locations`);
@@ -51,7 +51,7 @@ export default {
 
     try {
       result = (await Repository.get(
-        `${resource}/evolution/${encodeURIComponent(trendId)}/${locationId}`,
+        `${resource}/evolution/trends/${encodeURIComponent(trendId)}/places/${locationId}`,
       )).data;
     } catch {
       console.error(
@@ -66,7 +66,7 @@ export default {
     let result;
 
     try {
-      result = (await Repository.get(`${resource}/top`)).data;
+      result = (await Repository.get(`${resource}?top=true`)).data;
     } catch {
       console.error('Could not retrieve the top trends');
     }
@@ -79,7 +79,7 @@ export default {
 
     try {
       result = (await Repository.get(
-        `${resource}/search/${encodeURIComponent(query)}`,
+        `${resource}?name=${encodeURIComponent(query)}`,
       )).data;
     } catch {
       console.error(`Could not look for trends matching query: "${query}"`);
